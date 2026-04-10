@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width">
+
+<style>
+body{
+  background:#020617;
+  color:white;
+  font-family:sans-serif;
+  text-align:center;
+}
+
+input{
+  padding:12px;
+  width:80%;
+  margin:10px;
+  border-radius:10px;
+  border:none;
+  background:#1e293b;
+  color:white;
+}
+
+.box{
+  background:#1e293b;
+  margin:10px;
+  padding:15px;
+  border-radius:15px;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+.box:hover{
+  transform:scale(1.05);
+  box-shadow:0 0 10px #9333ea;
+}
+
+.active{
+  border:2px solid #a855f7;
+}
+
+.btn{
+  padding:12px;
+  width:80%;
+  border:none;
+  border-radius:12px;
+  background:linear-gradient(45deg,#9333ea,#6366f1);
+  color:white;
+  margin-top:10px;
+  box-shadow:0 0 10px #9333ea;
+}
+
+.statusBox{
+  background:#1e293b;
+  margin:10px;
+  padding:10px;
+  border-radius:10px;
+}
+
+.dot{
+  width:10px;height:10px;border-radius:50%;display:inline-block;
+}
+.kuning{background:yellow;}
+.hijau{background:lime;}
+.merah{background:red;}
+</style>
+</head>
+
+<body>
+
+<h2>DAVZJASTEB</h2>
+
+<input id="email" placeholder="Masukkan Email / No WA">
+
+<h3>Pilih Nominal</h3>
+<div id="list"></div>
+
+<p>Total: <span id="total">0</span></p>
+
+<button class="btn" onclick="beli()">Beli Sekarang</button>
+
+<div id="paymentBox"></div>
+
+<h3>STATUS ORDER</h3>
+<div id="statusBox"></div>
+
+<script>
+let harga=0;
+let pilihan="";
+
+let data=[
+{res:50,harga:5000},
+{res:60,harga:6000},
+{res:70,harga:7000},
+{res:80,harga:8000},
+{res:90,harga:9000},
+{res:100,harga:10000},
+{res:150,harga:15000},
+{res:200,harga:20000}
+];
+
+let html="";
+data.forEach(d=>{
+html+=`<div class="box" onclick="pilih(this,${d.harga},'${d.res} Result')">
+${d.res} Result - Rp ${d.harga}
+</div>`;
+});
+list.innerHTML=html;
+
+function pilih(el,h,r){
+document.querySelectorAll(".box").forEach(b=>b.classList.remove("active"));
+el.classList.add("active");
+harga=h;
+pilihan=r;
+total.innerText=h+350;
+}
+
+function beli(){
+let email=document.getElementById("email").value;
+
+if(!email || harga===0){
+alert("Lengkapi dulu!");
+return;
+}
+
+fetch("/order",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({layanan:pilihan,harga:harga,email:email})
+}).then(()=>{
+
+alert("Order masuk!");
+
+paymentBox.innerHTML=`
+<a href="https://sites.google.com/view/davzpayment/halaman-muka">
+<button class="btn">PAYMENT</button>
+</a>
+`;
+
+loadStatus();
+});
+}
+
+function loadStatus(){
+fetch("/orders")
+.then(r=>r.json())
+.then(d=>{
+let html="";
+
+d.forEach(o=>{
+let warna="kuning",text="Pending";
+
+if(o.status==="Selesai"){warna="hijau";text="Diproses";}
+if(o.status==="Cancel"){warna="merah";text="Dibatalkan";}
+
+html+=`
+<div class="statusBox">
+<p>#${o.id} (${o.email})</p>
+<p>${o.layanan}</p>
+<span class="dot ${warna}"></span> ${text}
+
+${o.status==="Selesai"?`
+<p>RESS DIKIRIM 10-20 MENIT</p>
+`:""}
+</div>`;
+});
+
+statusBox.innerHTML=html;
+});
+}
+
+setInterval(loadStatus,2000);
+loadStatus();
+</script>
+
+</body>
+</html>
